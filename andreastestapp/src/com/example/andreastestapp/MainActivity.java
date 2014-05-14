@@ -1,13 +1,32 @@
 package com.example.andreastestapp;
 
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.example.andeastestapp.library.DatabaseHandler;
+import com.example.andeastestapp.library.UserFunctions;
+import com.example.andreastestapp.exceptions.EmptyInputException;
+
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
@@ -16,8 +35,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
@@ -25,6 +47,17 @@ public class MainActivity extends Activity {
 	private ListView mDrawerList;
 	private ActionBarDrawerToggle mDrawerToggle;
 
+	
+	// JSON Response node names
+	private static String KEY_SUCCESS = "success";
+	private static String KEY_ERROR = "error";
+	private static String KEY_ERROR_MSG = "error_msg";
+	private static String KEY_UID = "id";
+	private static String KEY_USERNAME = "username";
+	private static String KEY_EMAIL = "email";
+	private static String KEY_CREATED_AT = "register_time";
+	
+	
 	private CharSequence mDrawerTitle;
 	private CharSequence mTitle;
 	CustomDrawerAdapter adapter;
@@ -32,7 +65,14 @@ public class MainActivity extends Activity {
 	List<DrawerItem> dataList;
 	
 	
-	Spinner userspinner;
+	Spinner 	userspinner;
+	TextView	textfieldErrorMsg;
+	
+	EditText	inputUser;
+	EditText	inputPassword;
+	Button		btnLogin;
+	Button		btnLinkToRegister;
+
 	
 
 	@Override
@@ -118,6 +158,8 @@ public class MainActivity extends Activity {
 				SelectItem(0);
 			}
 		}
+		
+		setup();
 		
 		//addUser();
 
@@ -286,12 +328,29 @@ public class MainActivity extends Activity {
 	}
 	
 	
-	public void addUser(String username, String email){
+	
+	public void setup(){
+		
+	}
+	
+	
+	public void addUser(String username, String email) throws EmptyInputException{
 		//adapter.addUser("test", "test@test.de");
+		if(username == null || username.trim().equals(""))
+			throw new EmptyInputException("username should not be empty");
+		
+		if(email == null || email.trim().equals(""))
+			throw new EmptyInputException("email should not be empty");
+		
+		
 		userspinner = (Spinner) adapter.view.findViewById(R.id.drawerSpinner);
 		adapter.userList.add(new SpinnerItem(R.drawable.user1, username, email));
+		
+		
+		
 		CustomSpinnerAdapter new_adapter = new CustomSpinnerAdapter(adapter.context,
 				R.layout.custom_spinner_item, adapter.userList);
+		
 		
 		userspinner.setAdapter(new_adapter);
 		
@@ -302,6 +361,31 @@ public class MainActivity extends Activity {
 		//mDrawerList.refreshDrawableState();
 	}
 	
+	public void delUser(String username, String email) throws EmptyInputException{
+		//adapter.addUser("test", "test@test.de");
+		if(username == null || username.trim().equals(""))
+			throw new EmptyInputException("username should not be empty");
+		
+		if(email == null || email.trim().equals(""))
+			throw new EmptyInputException("email should not be empty");
+		
+		
+		userspinner = (Spinner) adapter.view.findViewById(R.id.drawerSpinner);
+		SpinnerItem type;
+		for (Iterator iterator = adapter.userList.iterator(); iterator.hasNext();) {
+			type = (SpinnerItem) iterator.next();
+			if (type.email.trim().equals(email.trim()) && type.name.trim().equals(username.trim())){
+				adapter.userList.remove(type);
+			}
+		}
+
+		CustomSpinnerAdapter new_adapter = new CustomSpinnerAdapter(adapter.context,
+				R.layout.custom_spinner_item, adapter.userList);
+		
+		userspinner.setAdapter(new_adapter);
+
+	}
+	
 	
 	 private class NetCheck extends AsyncTask<String,String,Boolean>
 	    {
@@ -310,7 +394,7 @@ public class MainActivity extends Activity {
 	        @Override
 	        protected void onPreExecute(){
 	            super.onPreExecute();
-	            nDialog = new ProgressDialog(LoginActivity.this);
+	            nDialog = new ProgressDialog(MainActivity.this);
 	            nDialog.setTitle("Checking Network");
 	            nDialog.setMessage("Loading...");
 	            nDialog.setIndeterminate(false);
@@ -356,13 +440,13 @@ public class MainActivity extends Activity {
 	            }
 	            else{
 	                nDialog.dismiss();
-	                loginErrorMsg.setText("Error in Network Connection");
+	                textfieldErrorMsg.setText("Error in Network Connection");
 	            }
 	        }
 	    }
 
 	    /**
-	     * Async Task to get and send data to My Sql database through JSON respone.
+	     * Async Task to get and send data to Sql database through JSON respone.
 	     **/
 	    private class ProcessLogin extends AsyncTask<String, String, JSONObject> {
 
@@ -375,11 +459,11 @@ public class MainActivity extends Activity {
 	        protected void onPreExecute() {
 	            super.onPreExecute();
 
-	            inputUser = (EditText) findViewById(R.id.loginUser);
-	            inputPassword = (EditText) findViewById(R.id.loginPassword);
+	            //inputUser = (EditText) findViewById(R.id.loginUser);
+	            //inputPassword = (EditText) findViewById(R.id.loginPassword);
 	            username = inputUser.getText().toString();
 	            password = inputPassword.getText().toString();
-	            pDialog = new ProgressDialog(LoginActivity.this);
+	            pDialog = new ProgressDialog(MainActivity.this);
 	            pDialog.setTitle("Contacting Servers");
 	            pDialog.setMessage("Logging in ...");
 	            pDialog.setIndeterminate(false);
@@ -408,7 +492,7 @@ public class MainActivity extends Activity {
 	                        DatabaseHandler db = new DatabaseHandler(getApplicationContext());
 	                        
 	                        Intent upanel = new Intent(getApplicationContext(), MainActivity.class);
-	                        JSONArray json_user = json.getJSONArray("login");
+	                        JSONArray json_user = json.getJSONArray("users");
 	                        /**
 	                         * Clear all previous data in SQlite database.
 	                         **/
@@ -431,7 +515,7 @@ public class MainActivity extends Activity {
 	                    }else{
 
 	                        pDialog.dismiss();
-	                        loginErrorMsg.setText("Incorrect username/password");
+	                        textfieldErrorMsg.setText("Incorrect username/password");
 	                    }
 	                }
 	            } catch (JSONException e) {
