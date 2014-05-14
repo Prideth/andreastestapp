@@ -31,6 +31,7 @@ import android.content.res.Configuration;
 import android.support.v4.app.ActionBarDrawerToggle;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -330,7 +331,15 @@ public class MainActivity extends Activity {
 	
 	
 	public void setup(){
-		
+		/*try {
+			addUser("Andreas Dier", "dierandreas@googlemail.com");
+		} catch (EmptyInputException e) {
+			if(e.getMessage() != null){
+				Log.e("andreastestApp", e.getMessage());
+			} else{
+				Log.e("andreastestApp", "Error in addUser");
+			}
+		}*/
 	}
 	
 	
@@ -343,7 +352,9 @@ public class MainActivity extends Activity {
 			throw new EmptyInputException("email should not be empty");
 		
 		
-		userspinner = (Spinner) adapter.view.findViewById(R.id.drawerSpinner);
+		userspinner = (Spinner) findViewById(R.id.drawerSpinner);
+		adapter = new CustomDrawerAdapter(this, R.layout.custom_drawer_item,
+				dataList);
 		adapter.userList.add(new SpinnerItem(R.drawable.user1, username, email));
 		
 		
