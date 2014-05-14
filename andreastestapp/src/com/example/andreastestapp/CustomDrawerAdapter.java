@@ -1,11 +1,20 @@
 package com.example.andreastestapp;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
+
+
+import org.json.JSONArray;
+
+import com.example.andeastestapp.library.DatabaseHandler;
+import com.example.andeastestapp.library.UserFunctions;
+
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -80,17 +89,18 @@ public class CustomDrawerAdapter extends ArrayAdapter<DrawerItem> {
 
 			userList = new ArrayList<SpinnerItem>();
 
-			/*userList.add(new SpinnerItem(R.drawable.user1, "Ahamed Ishak",
-					"ishak@gmail.com"));
-			userList.add(new SpinnerItem(R.drawable.user2, "Brain Jekob",
-					"brain.j@gmail.com"));*/
+			
+			addUserFromDB();
+			userList.add(new SpinnerItem(R.drawable.ic_launcher, "Andreas Dier",
+					"adier@avarteq.de"));
+			
 			
 			CustomSpinnerAdapter adapter = new CustomSpinnerAdapter(context,
 					R.layout.custom_spinner_item, userList);
 
 			drawerHolder.spinner.setAdapter(adapter);
 
-			drawerHolder.spinner
+			/*drawerHolder.spinner
 					.setOnItemSelectedListener(new OnItemSelectedListener() {
 
 						@Override
@@ -106,7 +116,7 @@ public class CustomDrawerAdapter extends ArrayAdapter<DrawerItem> {
 							// TODO Auto-generated method stub
 
 						}
-					});
+					});*/
 
 		} else if (dItem.getTitle() != null) {
 			drawerHolder.headerLayout.setVisibility(LinearLayout.VISIBLE);
@@ -128,9 +138,16 @@ public class CustomDrawerAdapter extends ArrayAdapter<DrawerItem> {
 	}
 
 	
-	public void addUser(String username, String email){
-		userList.add(new SpinnerItem(R.drawable.user1, username,
-				email));
+	public void addUserFromDB(){
+		
+		DatabaseHandler db = new DatabaseHandler(context);
+        if (db.getRowCount() > 0){
+        	HashMap<String,String> users = db.getUserDetails();
+        	userList.add(new SpinnerItem(R.drawable.user1, users.get("firstname")+ " " + users.get("lastname"),
+        			users.get("email")));
+        }
+		
+		
 		
 	}
 	
@@ -141,5 +158,9 @@ public class CustomDrawerAdapter extends ArrayAdapter<DrawerItem> {
 		LinearLayout headerLayout, itemLayout, spinnerLayout;
 		Spinner spinner;
 	}
+	
+	
+	
+	
 	
 }
